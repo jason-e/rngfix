@@ -1,6 +1,6 @@
 # RNGFix
 
-[![RNGFix Demo Video](http://img.youtube.com/vi/PlMjHAQ90G8/mqdefault.jpg)](https://www.youtube.com/watch?v=PlMjHAQ90G8)
+[![RNGFix Demo Video](https://i.imgur.com/YYm16Qh.png)](https://www.youtube.com/watch?v=PlMjHAQ90G8)
 
 RNGFix is a [SourceMod](https://www.sourcemod.net/about.php) plugin that fixes a number of physics bugs that show up in movement-based game modes like bhop and surf. These issues are related in that they all appear to happen at random -- as far as a human player can tell.
 
@@ -11,6 +11,7 @@ Nothing this plugin does is impossible otherwise -- it just keeps random chance 
 ## Dependencies
 
 * **SourceMod 1.10 - Build 6326 or newer**
+
 The trigger jumping fix makes use of ray trace functionality added to SourceMod in in August 2018.
 	
 * [**DHooks**](https://forums.alliedmods.net/showthread.php?t=180114) 
@@ -56,15 +57,20 @@ The Source engine lets you move up stairs without requiring you to actually jump
 This fix will only be applied on surf maps (maps starting with `surf_`) because it has undesirable side-effects on bhop maps. It is also unlikely to be useful on bhop.
 
 ---
-A more technical explanation of these fixes can be found [here](../tech.md).
+A more technical explanation of these fixes can be found [here](tech.md).
 
 ## Settings
 
 The fixes can be disabled individually by setting the following cvars to `0` in `cfg/sourcemod/plugin.rngfix.cfg`. All fixes are enabled by default.
 	
 `rngfix_downhill`
+
 `rngfix_uphill`
+
 `rngfix_triggerjump`
+
 `rngfix_telehop`
+
 `rngfix_edge`
+
 `rngfix_stairs`
