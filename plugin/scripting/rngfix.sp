@@ -197,7 +197,7 @@ public void OnPluginStart()
 	if (!PrepSDKCall_SetFromConf(gameMovementConf, SDKConf_Signature, "CreateInterface"))
 	{
 		SetFailState("Failed to get CreateInterface");
-    }    
+	}    
 	PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Pointer, VDECODE_FLAG_ALLOWNULL);
 	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
@@ -213,7 +213,7 @@ public void OnPluginStart()
 	delete CreateInterface;
      
 	if (!gameMovement)
-    {
+	{
 		SetFailState("Failed to get IGameMovement pointer");
 	}
 	
