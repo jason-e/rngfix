@@ -10,17 +10,13 @@ Nothing this plugin does is impossible otherwise -- it just keeps random chance 
 
 ## Dependencies
 
-* **SourceMod 1.10 - Build 6326 or newer**
-
-The trigger jumping fix makes use of ray trace functionality added to SourceMod in in August 2018.
+* **SourceMod 1.10 - Build 6326 or newer** - The trigger jumping fix makes use of ray trace functionality added to SourceMod in in August 2018.
 	
 * [**DHooks**](https://forums.alliedmods.net/showthread.php?t=180114) 
 
-* MarkTouching Extension (included)
-This simply exposes the function `IServerGameEnts::MarkEntitiesAsTouching` for this plugin to use.
+* MarkTouching Extension (included) - This simply exposes the function `IServerGameEnts::MarkEntitiesAsTouching` for this plugin to use.
 
-* (Optional, CS:GO) [Movement Unlocker](https://forums.alliedmods.net/showthread.php?t=255298)
-Enables sliding on CS:GO. If you don't care about sliding on surf and the stair sliding fix, you don't need this.
+* (Optional, CS:GO) [Movement Unlocker](https://forums.alliedmods.net/showthread.php?t=255298) - Enables sliding on CS:GO. If you don't care about sliding on surf and the stair sliding fix, you don't need this.
 
 Also, remember that you should stop using Slopefix if using RNGFix.
 
