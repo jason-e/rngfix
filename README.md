@@ -12,7 +12,7 @@ CSS and CS:GO are currently supported. Support for additional games may be added
 
 ## Dependencies
 
-* **SourceMod 1.10 - Build 6326 or newer** - The trigger jumping fix makes use of ray trace functionality added to SourceMod in in August 2018.
+* **SourceMod 1.10 - Build 6326 or newer** - The trigger jumping fix makes use of ray trace functionality added to SourceMod in August 2018.
 	
 * [**DHooks**](https://forums.alliedmods.net/showthread.php?t=180114) 
 
