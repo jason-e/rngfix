@@ -8,6 +8,8 @@ Another plugin, [Slope Landing Fix (Slopefix)](https://forums.alliedmods.net/sho
 
 Nothing this plugin does is impossible otherwise -- it just keeps random chance from mattering.
 
+CSS and CS:GO are currently supported. Support for additional games may be added in the future.
+
 ## Dependencies
 
 * **SourceMod 1.10 - Build 6326 or newer** - The trigger jumping fix makes use of ray trace functionality added to SourceMod in in August 2018.
