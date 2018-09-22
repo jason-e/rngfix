@@ -1,0 +1,42 @@
+"Games"
+{
+	"csgo"
+	{
+		"Offsets"
+		{
+			// applies to trigger_vphysics_motion and trigger_wind
+			"CBaseVPhysicsTrigger::PassesTriggerFilters"
+			{
+				"windows"	"196"
+				"linux"		"197"
+			}
+
+			// applies to all other triggers
+			"CBaseTrigger::PassesTriggerFilters"
+			{
+				"windows"	"206"
+				"linux"		"207"
+			}
+		}
+	}
+
+	"cstrike"
+	{
+		"Offsets"
+		{
+			// applies to trigger_vphysics_motion and trigger_wind
+			"CBaseVPhysicsTrigger::PassesTriggerFilters"
+			{
+				"windows"	"188"
+				"linux"		"189"
+			}
+
+			// applies to all other triggers
+			"CBaseTrigger::PassesTriggerFilters"
+			{
+				"windows"	"197"
+				"linux"		"198"
+			}
+		}
+	}
+}
