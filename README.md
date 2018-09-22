@@ -16,8 +16,6 @@ CSS and CS:GO are currently supported. Support for additional games may be added
 
 * [**DHooks**](https://forums.alliedmods.net/showthread.php?t=180114)
 
-* MarkTouching Extension (included) - This simply exposes the function `IServerGameEnts::MarkEntitiesAsTouching` for this plugin to use.
-
 * (Optional, CS:GO) [Movement Unlocker](https://forums.alliedmods.net/showthread.php?t=255298) - Enables sliding on CS:GO. If you don't care about sliding on surf and the stair sliding fix, you don't need this.
 
 Also, remember that you should stop using Slopefix if using RNGFix.
