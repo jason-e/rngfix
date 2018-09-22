@@ -2,12 +2,11 @@
 #include <sdkhooks>
 
 #include <dhooks>
-#include <marktouching>
 
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "1.0.0"
+#define PLUGIN_VERSION "1.1.0"
 
 public Plugin myinfo = 
 {
@@ -83,6 +82,8 @@ ConVar g_cvAutoBunnyHopping;
 
 Handle g_hPassesTriggerFilters;
 Handle g_hProcessMovementHookPre;
+Address g_IServerGameEnts;
+Handle g_hMarkEntitiesAsTouching;
 
 bool g_bIsSurfMap;
 
@@ -144,8 +145,6 @@ public void OnPluginStart()
 	
 	g_flDuckDelta = (g_vecMaxsUnducked[2]-g_vecMaxsDucked[2]) / 2;
 	
-	CreateConVar("rngfix_version", PLUGIN_VERSION, "RNGFix Version", FCVAR_NOTIFY|FCVAR_REPLICATED);
-	
 	g_cvDownhill 	= CreateConVar("rngfix_downhill", "1", "Enable downhill incline fix.", FCVAR_NOTIFY, true, 0.0, true, 1.0);
 	g_cvUphill 		= CreateConVar("rngfix_uphill", "1", "Enable uphill incline fix. Set to -1 to normalize effects not in the player's favor (not recommended).", FCVAR_NOTIFY, true, -1.0, true, 1.0);
 	g_cvEdge 		= CreateConVar("rngfix_edge", "1", "Enable edgebug fix.", FCVAR_NOTIFY, true, 0.0, true, 1.0);
@@ -173,11 +172,12 @@ public void OnPluginStart()
 	g_cvJumpImpulse		 = FindConVar("sv_jump_impulse");	
 	g_cvAutoBunnyHopping = FindConVar("sv_autobunnyhopping");
 	
-	Handle filtersConf = LoadGameConfigFile("triggerfilters.games");	
-	if (filtersConf == null) SetFailState("Failed to load triggerfilters gamedata");
+	Handle gamedataConf = LoadGameConfigFile("rngfix.games");	
+	if (gamedataConf == null) SetFailState("Failed to load rngfix gamedata");
 	
+	// PassesTriggerFilters
 	StartPrepSDKCall(SDKCall_Entity);
-	if (!PrepSDKCall_SetFromConf(filtersConf, SDKConf_Virtual, "CBaseTrigger::PassesTriggerFilters"))
+	if (!PrepSDKCall_SetFromConf(gamedataConf, SDKConf_Virtual, "CBaseTrigger::PassesTriggerFilters"))
 	{
 		SetFailState("Failed to get CBaseTrigger::PassesTriggerFilters offset");
 	}
@@ -187,45 +187,65 @@ public void OnPluginStart()
 	
 	if (g_hPassesTriggerFilters == null) SetFailState("Unable to prepare SDKCall for CBaseTrigger::PassesTriggerFilters");
 	
-	delete filtersConf;
-	
+	// CreateInterface
 	// Thanks SlidyBat and ici
-	Handle gameMovementConf = LoadGameConfigFile("gamemovement.games"); 	
-	if (gameMovementConf == null) SetFailState("Failed to load gamemovement gamedata");
-
 	StartPrepSDKCall(SDKCall_Static);
-	if (!PrepSDKCall_SetFromConf(gameMovementConf, SDKConf_Signature, "CreateInterface"))
+	if (!PrepSDKCall_SetFromConf(gamedataConf, SDKConf_Signature, "CreateInterface"))
 	{
 		SetFailState("Failed to get CreateInterface");
 	}    
 	PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Pointer, VDECODE_FLAG_ALLOWNULL);
-	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);    
+	Handle CreateInterface = EndPrepSDKCall();
+	
+	if (CreateInterface == null) SetFailState("Unable to prepare SDKCall for CreateInterface");
 
 	char interfaceName[64];
-	if (!GameConfGetKeyValue(gameMovementConf, "IGameMovement", interfaceName, sizeof(interfaceName)))
+	
+	// ProcessMovement
+	if (!GameConfGetKeyValue(gamedataConf, "IGameMovement", interfaceName, sizeof(interfaceName)))
 	{
 		SetFailState("Failed to get IGameMovement interface name");
-	}
-    
-	Handle CreateInterface = EndPrepSDKCall();
-	Address gameMovement = SDKCall(CreateInterface, interfaceName, 0);
-	delete CreateInterface;
-     
-	if (!gameMovement)
-	{
+	}	
+	Address IGameMovement = SDKCall(CreateInterface, interfaceName, 0);     
+	if (!IGameMovement)
+    {
 		SetFailState("Failed to get IGameMovement pointer");
 	}
 	
-	int offset = GameConfGetOffset(gameMovementConf, "ProcessMovement");
+	int offset = GameConfGetOffset(gamedataConf, "ProcessMovement");
 	if (offset == -1) SetFailState("Failed to get ProcessMovement offset");
 	
 	g_hProcessMovementHookPre = DHookCreate(offset, HookType_Raw, ReturnType_Void, ThisPointer_Ignore, DHook_ProcessMovementPre);
 	DHookAddParam(g_hProcessMovementHookPre, HookParamType_CBaseEntity);
 	DHookAddParam(g_hProcessMovementHookPre, HookParamType_ObjectPtr);
-	DHookRaw(g_hProcessMovementHookPre, false, gameMovement);	
-    
-	delete gameMovementConf;
+	DHookRaw(g_hProcessMovementHookPre, false, IGameMovement);	
+	
+	// MarkEntitiesAsTouching
+	if (!GameConfGetKeyValue(gamedataConf, "IServerGameEnts", interfaceName, sizeof(interfaceName)))
+	{
+		SetFailState("Failed to get IServerGameEnts interface name");
+	}	
+	g_IServerGameEnts = SDKCall(CreateInterface, interfaceName, 0);     
+	if (!g_IServerGameEnts)
+    {
+		SetFailState("Failed to get IServerGameEnts pointer");
+	}
+	
+	StartPrepSDKCall(SDKCall_Raw);
+	if (!PrepSDKCall_SetFromConf(gamedataConf, SDKConf_Virtual, "IServerGameEnts::MarkEntitiesAsTouching"))
+	{
+		SetFailState("Failed to get IServerGameEnts::MarkEntitiesAsTouching offset");
+	}
+	PrepSDKCall_AddParameter(SDKType_Edict, SDKPass_Pointer);
+	PrepSDKCall_AddParameter(SDKType_Edict, SDKPass_Pointer);
+	g_hMarkEntitiesAsTouching = EndPrepSDKCall();
+	
+	if (g_hMarkEntitiesAsTouching == null) SetFailState("Unable to prepare SDKCall for IServerGameEnts::MarkEntitiesAsTouching");
+	
+	delete CreateInterface;
+	delete gamedataConf;
 
 	if (g_bLateLoad)
 	{
@@ -420,9 +440,9 @@ bool CanJump(int client)
 
 void CheckJumpButton(int client, float velocity[3])
 {
-	// Skip dead and water checks since we already did them
+	// Skip dead and water checks since we already did them.
 	
-	// We need to check for ground somewhere so stick it here
+	// We need to check for ground somewhere so stick it here.
 	if (GetEntityFlags(client) & FL_ONGROUND == 0) return;
 	
 	if (!CanJump(client)) return;
@@ -501,7 +521,7 @@ void StartGravity(int client, float velocity[3])
 	GetEntPropVector(client, Prop_Data, "m_vecBaseVelocity", baseVelocity);
 	velocity[2] += baseVelocity[2] * g_flFrameTime[client];
 	
-	// baseVelocity[2] would get cleared here but we shouldn't do that since this is just a prediction
+	// baseVelocity[2] would get cleared here but we shouldn't do that since this is just a prediction.
 	
 	CheckVelocity(velocity);
 }
@@ -538,7 +558,7 @@ void PreventCollision(int client, Handle hParams, const float origin[3], const f
 	newOrigin[2] += 0.1;
 	
 	// Since the MoveData for this tick has already been filled and is about to be used, we need
-	// to modify it directly instead of changing the player entity's actual position (such as with TeleportEntity) 
+	// to modify it directly instead of changing the player entity's actual position (such as with TeleportEntity).
 	DHookSetParamObjectPtrVarVector(hParams, 2, GetEngineVersion() == Engine_CSGO ? 172 : 152, ObjectValueType_Vector, newOrigin);
 	
 	DebugLaser(client, origin, newOrigin, 15.0, 0.5, g_color2);
@@ -600,7 +620,7 @@ public MRESReturn DHook_ProcessMovementPre(Handle hParams)
 void RunPreTickChecks(int client, Handle hParams)
 {				
 	// Recreate enough of CGameMovement::ProcessMovement to predict if fixes are needed.
-	// We only really care about a limited set of scenarios (less than waist-deep in water, MOVETYPE_WALK, air movement)
+	// We only really care about a limited set of scenarios (less than waist-deep in water, MOVETYPE_WALK, air movement).
 		
 	if (!IsPlayerAlive(client)) return;
 	if (GetEntityMoveType(client) != MOVETYPE_WALK) return;
@@ -828,7 +848,7 @@ bool DoTriggerjumpFix(int client, const float landingPoint[3], const float landi
 		
 		DebugMsg(client, "DO FIX: Trigger Jumping (entity %i)", trigger);
 		
-		MarkEntitiesAsTouching(client, trigger);
+		SDKCall(g_hMarkEntitiesAsTouching, g_IServerGameEnts, client, trigger);
 		didSomething = true;
 	}
 	

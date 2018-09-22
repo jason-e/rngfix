@@ -13,8 +13,8 @@ CSS and CS:GO are currently supported. Support for additional games may be added
 ## Dependencies
 
 * **SourceMod 1.10 - Build 6326 or newer** - The trigger jumping fix makes use of ray trace functionality added to SourceMod in August 2018.
-	
-* [**DHooks**](https://forums.alliedmods.net/showthread.php?t=180114) 
+
+* [**DHooks**](https://forums.alliedmods.net/showthread.php?t=180114)
 
 * MarkTouching Extension (included) - This simply exposes the function `IServerGameEnts::MarkEntitiesAsTouching` for this plugin to use.
 
@@ -25,7 +25,7 @@ Also, remember that you should stop using Slopefix if using RNGFix.
 ## Fixes
 
 **Downhill Inclines**
-		
+
 Sometimes a player will not be "boosted" when falling onto an inclined surface, specifically while moving downhill. This fix results in the player always getting boosted. This is the scenario addressed by the original slopefix. RNGFix also implements this fix in a way that does not cause double boosts when a `trigger_push` is on the incline, which is a problem the original slopefix had.
 
 
@@ -46,7 +46,7 @@ It is possible to pass through a teleport trigger so quickly that you also colli
 
 **Edge Bugs**
 
-When moving at high speed and landing on the extreme trailing edge of a platform, it is possible to collide with the surface -- resulting in a loss of vertical speed -- but without jumping, despite pressing jump in time (or holding jump with auto-bhop enabled). This fix causes the player to always be able to jump in this scenario. Note that you are still able to slide off by not pressing jump, if you wish to do so.
+When moving at high speed and landing on the extreme trailing edge of a platform, it is possible to collide with the surface -- resulting in a loss of vertical speed -- but without jumping, despite pressing jump in time (or holding jump with auto-bhop enabled). This fix causes the player to always be able to jump in this scenario. It also prevents you from touching the ground and edge bugging off it without activating triggers there. Note that you are still able to slide off by not pressing jump, if you wish to do so.
 
 **Stair Sliding** (Surf Only)
 
@@ -60,7 +60,7 @@ A more technical explanation of these fixes can be found [here](tech.md).
 ## Settings
 
 The fixes can be disabled individually by setting the following cvars to `0` in `cfg/sourcemod/plugin.rngfix.cfg`. All fixes are enabled by default.
-	
+
 `rngfix_downhill`
 
 `rngfix_uphill`
