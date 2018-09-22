@@ -210,7 +210,7 @@ public void OnPluginStart()
 	}	
 	Address IGameMovement = SDKCall(CreateInterface, interfaceName, 0);     
 	if (!IGameMovement)
-    {
+	{
 		SetFailState("Failed to get IGameMovement pointer");
 	}
 	
@@ -229,7 +229,7 @@ public void OnPluginStart()
 	}	
 	g_IServerGameEnts = SDKCall(CreateInterface, interfaceName, 0);     
 	if (!g_IServerGameEnts)
-    {
+	{
 		SetFailState("Failed to get IServerGameEnts pointer");
 	}
 	
