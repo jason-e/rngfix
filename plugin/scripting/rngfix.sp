@@ -6,7 +6,7 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "1.1.0"
+#define PLUGIN_VERSION "1.1.1"
 
 public Plugin myinfo = 
 {
@@ -48,6 +48,7 @@ int g_iLastGroundEnt[MAXPLAYERS+1];
 int g_iLastLandTick[MAXPLAYERS+1];
 int g_iLastCollisionTick[MAXPLAYERS+1];
 int g_iLastMapTeleportTick[MAXPLAYERS+1];
+int g_bMapTeleportedSequentialTicks[MAXPLAYERS+1];
 float g_vCollisionPoint[MAXPLAYERS+1][3];
 float g_vCollisionNormal[MAXPLAYERS+1][3];
 
@@ -346,7 +347,12 @@ public void Hook_TriggerTeleportTouchPost(int entity, int other)
 	if (GetEntPropString(entity, Prop_Data, "m_target", targetstring, sizeof(targetstring)) == 0) return;
 	
 	if (!NameExists(targetstring)) return;
-		 		
+	
+	if (g_iLastMapTeleportTick[other] == g_iTick[other]-1)
+	{
+		g_bMapTeleportedSequentialTicks[other] = true;
+	}
+	
 	g_iLastMapTeleportTick[other] = g_iTick[other];
 	
 	DebugMsg(other, "Triggered teleport %i", entity);
@@ -605,6 +611,7 @@ public MRESReturn DHook_ProcessMovementPre(Handle hParams)
 	
 	g_iTick[client]++;
 	g_flFrameTime[client] = GetTickInterval() * GetEntPropFloat(client, Prop_Data, "m_flLaggedMovementValue");
+	g_bMapTeleportedSequentialTicks[client] = false;
 		
 	// If we are actually not doing ANY of the fixes that rely on pre-tick collision prediction, skip all this.
 	if (!g_cvUphill.BoolValue && !g_cvEdge.BoolValue && !g_cvStairs.BoolValue && !g_cvTelehop.BoolValue && !g_cvDownhill.BoolValue)
@@ -1065,7 +1072,11 @@ bool DoTelehopFix(int client)
 	if (!g_cvTelehop.BoolValue) return false;	
 	if (g_iLastTickPredicted[client] != g_iTick[client]) return false;
 	
-	if (g_iLastMapTeleportTick[client] != g_iTick[client]) return false;	
+	if (g_iLastMapTeleportTick[client] != g_iTick[client]) return false;
+	
+	// If the player was teleported two ticks in a row, don't do this fix because the player likely just passed
+	// through a speed-stopping teleport hub, and the map really did want to stop the player this way.
+	if (g_bMapTeleportedSequentialTicks[client]) return false;
 			
 	// Check if we either collided this tick OR landed during this tick.
 	// Note that we could have landed this tick, lost Z velocity, then gotten teleported, making us no longer on the ground.
