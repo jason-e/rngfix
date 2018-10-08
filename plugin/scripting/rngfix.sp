@@ -48,7 +48,7 @@ int g_iLastGroundEnt[MAXPLAYERS+1];
 int g_iLastLandTick[MAXPLAYERS+1];
 int g_iLastCollisionTick[MAXPLAYERS+1];
 int g_iLastMapTeleportTick[MAXPLAYERS+1];
-int g_bMapTeleportedSequentialTicks[MAXPLAYERS+1];
+bool g_bMapTeleportedSequentialTicks[MAXPLAYERS+1];
 float g_vCollisionPoint[MAXPLAYERS+1][3];
 float g_vCollisionNormal[MAXPLAYERS+1][3];
 
