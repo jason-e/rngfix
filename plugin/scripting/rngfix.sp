@@ -6,7 +6,7 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "1.1.1"
+#define PLUGIN_VERSION "1.1.2"
 
 public Plugin myinfo =
 {
@@ -589,20 +589,28 @@ void ClipVelocity(const float velocity[3], const float nrm[3], float out[3])
 	// The adjust step only matters with overbounce which doesnt apply to walkable surfaces.
 }
 
-void SetVelocity(int client, float velocity[3])
+void SetVelocity(int client, float velocity[3], bool dontUseTeleportEntity = false)
 {
 	// Pull out basevelocity from desired true velocity
 	// Use the pre-tick basevelocity because that is what influenced this tick's movement and the desired new velocity.
 	SubtractVectors(velocity, g_vLastBaseVelocity[client], velocity);
 
-	float baseVelocity[3];
-	GetEntPropVector(client, Prop_Data, "m_vecBaseVelocity", baseVelocity);
+	if (dontUseTeleportEntity && GetEntPropEnt(client, Prop_Data, "m_hMoveParent") == -1)
+	{
+		SetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", velocity);
+		SetEntPropVector(client, Prop_Data, "m_vecVelocity", velocity);
+	}
+	else
+	{
+		float baseVelocity[3];
+		GetEntPropVector(client, Prop_Data, "m_vecBaseVelocity", baseVelocity);
 
-	TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, velocity);
+		TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, velocity);
 
-	// TeleportEntity with non-null velocity wipes out basevelocity, so restore it after.
-	// Since we didn't change position, nothing should change regarding influences on basevelocity.
-	SetEntPropVector(client, Prop_Data, "m_vecBaseVelocity", baseVelocity);
+		// TeleportEntity with non-null velocity wipes out basevelocity, so restore it after.
+		// Since we didn't change position, nothing should change regarding influences on basevelocity.
+		SetEntPropVector(client, Prop_Data, "m_vecBaseVelocity", baseVelocity);
+	}
 }
 
 public MRESReturn DHook_ProcessMovementPre(Handle hParams)
@@ -1096,9 +1104,24 @@ bool DoTelehopFix(int client)
 	// Don't forget to add the second half-tick of gravity ourselves.
 	FinishGravity(client, newVelocity);
 
-	DebugMsg(client, "DO FIX: Telehop");
+	float origin[3];
+	GetEntPropVector(client, Prop_Data, "m_vecAbsOrigin", origin);
 
-	SetVelocity(client, newVelocity);
+	float mins[3], maxs[3];
+	GetEntPropVector(client, Prop_Data, "m_vecMins", mins);
+	GetEntPropVector(client, Prop_Data, "m_vecMaxs", maxs);
+
+	TR_TraceHullFilter(origin, origin, mins, maxs, MASK_PLAYERSOLID, PlayerFilter);
+
+	// If we appear to be "stuck" after teleporting (likely because the teleport destination
+	// was exactly on the ground), set velocity directly to avoid side-effects of
+	// TeleportEntity that can cause the player to really get stuck in the ground.
+	// This might only be an issue in CSS, but do it on CSGO too just to be safe.
+	bool dontUseTeleportEntity = TR_DidHit();
+
+	DebugMsg(client, "DO FIX: Telehop%s", dontUseTeleportEntity ? " (no TeleportEntity)" : "");
+
+	SetVelocity(client, newVelocity, dontUseTeleportEntity);
 
 	return true;
 }
