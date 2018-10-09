@@ -998,7 +998,9 @@ bool DoInclineCollisionFixes(int client, const float nrm[3])
 
 	// If a collision was predicted this tick (and wasn't prevented by another fix alrady), no fix is needed.
 	// It's possible we actually have to run the edge bug fix and an incline fix in the same tick.
-	if (g_iLastCollisionTick[client] == g_iTick[client]) return false;
+	// If using the old Slopefix logic, do the fix regardless of necessity just like Slopefix
+	// so we can be sure to trigger a double boost if applicable.
+	if (g_iLastCollisionTick[client] == g_iTick[client] && !g_cvUseOldSlopefixLogic.BoolValue) return false;
 
 	// Make sure the ground is not level, otherwise a collision would do nothing important anyway.
 	if (nrm[2] == 1.0) return false;
