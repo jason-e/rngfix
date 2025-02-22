@@ -62,15 +62,15 @@
 			// applies to trigger_vphysics_motion and trigger_wind
 			"CBaseVPhysicsTrigger::PassesTriggerFilters"
 			{
-				"windows"	"188"
-				"linux"		"189"
+				"windows"	"194"
+				"linux"		"195"
 			}
 
 			// applies to all other triggers
 			"CBaseTrigger::PassesTriggerFilters"
 			{
-				"windows"	"197"
-				"linux"		"198"
+				"windows"	"203"
+				"linux"		"204"
 			}
 
 			"IServerGameEnts::MarkEntitiesAsTouching"
