@@ -52,6 +52,36 @@
 				"windows"	"1"
 				"linux"		"2"
 			}
+
+			"CMoveData::m_flForwardMove"
+			{
+				"windows"   "44"
+				"linux"     "44"
+			}
+
+			"CMoveData::m_flSideMove"
+			{
+				"windows"   "48"
+				"linux"     "48"
+			}
+
+			"CMoveData::m_flMaxSpeed"
+			{
+				"windows"   "56"
+				"linux"     "56"
+			}
+
+			"CMoveData::m_vecVelocity"
+			{
+				"windows"   "64"
+				"linux"     "64"
+			}
+
+			"CMoveData::m_vecAbsOrigin"
+			{
+				"windows"   "172"
+				"linux"     "172"
+			}
 		}
 	}
 
@@ -59,24 +89,70 @@
 	{
 		"Offsets"
 		{
+			"CMoveData::m_flForwardMove"
+			{
+				"windows"   "44"
+				"windows64" "44"
+				"linux"     "44"
+				"linux64"   "44"
+			}
+
+			"CMoveData::m_flSideMove"
+			{
+				"windows"   "52"
+				"windows64" "52"
+				"linux"     "52"
+				"linux64"   "52"
+			}
+
+			"CMoveData::m_flMaxSpeed"
+			{
+				"windows"   "60"
+				"windows64" "60"
+				"linux"     "60"
+				"linux64"   "60"
+			}
+
+			"CMoveData::m_vecVelocity"
+			{
+				"windows"   "68"
+				"windows64" "68"
+				"linux"     "68"
+				"linux64"   "68"
+			}
+
+			"CMoveData::m_vecAbsOrigin"
+			{
+				"windows"   "156"
+				"windows64" "156"
+				"linux"     "156"
+				"linux64"   "156"
+			}
+
 			// applies to trigger_vphysics_motion and trigger_wind
 			"CBaseVPhysicsTrigger::PassesTriggerFilters"
 			{
 				"windows"	"194"
+				"windows64" "194"
 				"linux"		"195"
+				"linux64"   "195"
 			}
 
 			// applies to all other triggers
 			"CBaseTrigger::PassesTriggerFilters"
 			{
 				"windows"	"203"
+				"windows64" "203"
 				"linux"		"204"
+				"linux64"   "204"
 			}
 
 			"IServerGameEnts::MarkEntitiesAsTouching"
 			{
 				"windows"	"2"
+				"windows64" "2"
 				"linux"		"3"
+				"linux64"   "3"
 			}
 		}
 	}
