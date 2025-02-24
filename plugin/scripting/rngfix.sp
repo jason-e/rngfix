@@ -6,7 +6,7 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "1.1.2"
+#define PLUGIN_VERSION "1.1.3"
 
 public Plugin myinfo =
 {
@@ -85,6 +85,12 @@ Handle g_hPassesTriggerFilters;
 Handle g_hProcessMovementHookPre;
 Address g_IServerGameEnts;
 Handle g_hMarkEntitiesAsTouching;
+
+int g_iCMoveData_ForwardMove;
+int g_iCMoveData_SideMove;
+int g_iCMoveData_MaxSpeed;
+int g_iCMoveData_Velocity;
+int g_iCMoveData_Origin;
 
 bool g_bIsSurfMap;
 
@@ -222,6 +228,27 @@ public void OnPluginStart()
 	DHookAddParam(g_hProcessMovementHookPre, HookParamType_CBaseEntity);
 	DHookAddParam(g_hProcessMovementHookPre, HookParamType_ObjectPtr);
 	DHookRaw(g_hProcessMovementHookPre, false, IGameMovement);
+
+	if ((g_iCMoveData_ForwardMove = GameConfGetOffset(gamedataConf, "CMoveData::m_flForwardMove")) == -1)
+	{
+		SetFailState("Failed to get CMoveData::m_flForwardMove");
+	}
+	if ((g_iCMoveData_SideMove = GameConfGetOffset(gamedataConf, "CMoveData::m_flSideMove")) == -1)
+	{
+		SetFailState("Failed to get CMoveData::m_flSideMove");
+	}
+	if ((g_iCMoveData_MaxSpeed = GameConfGetOffset(gamedataConf, "CMoveData::m_flMaxSpeed")) == -1)
+	{
+		SetFailState("Failed to get CMoveData::m_flMaxSpeed");
+	}
+	if ((g_iCMoveData_Velocity = GameConfGetOffset(gamedataConf, "CMoveData::m_vecVelocity")) == -1)
+	{
+		SetFailState("Failed to get CMoveData::m_vecVelocity");
+	}
+	if ((g_iCMoveData_Origin = GameConfGetOffset(gamedataConf, "CMoveData::m_vecAbsOrigin")) == -1)
+	{
+		SetFailState("Failed to get CMoveData::m_vecAbsOrigin");
+	}
 
 	// MarkEntitiesAsTouching
 	if (!GameConfGetKeyValue(gamedataConf, "IServerGameEnts", interfaceName, sizeof(interfaceName)))
@@ -486,7 +513,7 @@ void AirAccelerate(int client, float velocity[3], Handle hParams)
 	for (int i = 0; i < 2; i++)	wishvel[i] = fore[i] * g_vVel[client][0] + side[i] * g_vVel[client][1];
 
 	float wishspeed = NormalizeVector(wishvel, wishdir);
-	float m_flMaxSpeed = DHookGetParamObjectPtrVar(hParams, 2, 56, ObjectValueType_Float);
+	float m_flMaxSpeed = DHookGetParamObjectPtrVar(hParams, 2, g_iCMoveData_MaxSpeed, ObjectValueType_Float);
 	if (wishspeed > m_flMaxSpeed && m_flMaxSpeed != 0.0) wishspeed = m_flMaxSpeed;
 
 	if (wishspeed)
@@ -565,7 +592,7 @@ void PreventCollision(int client, Handle hParams, const float origin[3], const f
 
 	// Since the MoveData for this tick has already been filled and is about to be used, we need
 	// to modify it directly instead of changing the player entity's actual position (such as with TeleportEntity).
-	DHookSetParamObjectPtrVarVector(hParams, 2, GetEngineVersion() == Engine_CSGO ? 172 : 152, ObjectValueType_Vector, newOrigin);
+	DHookSetParamObjectPtrVarVector(hParams, 2, g_iCMoveData_Origin, ObjectValueType_Vector, newOrigin);
 
 	DebugLaser(client, origin, newOrigin, 15.0, 0.5, g_color2);
 
@@ -650,18 +677,20 @@ void RunPreTickChecks(int client, Handle hParams)
 
 	g_iButtons[client] = DHookGetParamObjectPtrVar(hParams, 2, 36, ObjectValueType_Int);
 	g_iOldButtons[client] = DHookGetParamObjectPtrVar(hParams, 2, 40, ObjectValueType_Int);
-	DHookGetParamObjectPtrVarVector(hParams, 2, 44, ObjectValueType_Vector, g_vVel[client]);
+	g_vVel[client][0] = DHookGetParamObjectPtrVar(hParams, 2, g_iCMoveData_ForwardMove, ObjectValueType_Float);
+	g_vVel[client][1] = DHookGetParamObjectPtrVar(hParams, 2, g_iCMoveData_SideMove, ObjectValueType_Float);
+	g_vVel[client][2] = 0.0;
 	DHookGetParamObjectPtrVarVector(hParams, 2, 12, ObjectValueType_Vector, g_vAngles[client]);
 
 	float velocity[3];
-	DHookGetParamObjectPtrVarVector(hParams, 2, 64, ObjectValueType_Vector, velocity);
+	DHookGetParamObjectPtrVarVector(hParams, 2, g_iCMoveData_Velocity, ObjectValueType_Vector, velocity);
 
 	float baseVelocity[3];
 	// basevelocity is not stored in MoveData
 	GetEntPropVector(client, Prop_Data, "m_vecBaseVelocity", baseVelocity);
 
 	float origin[3];
-	DHookGetParamObjectPtrVarVector(hParams, 2, GetEngineVersion() == Engine_CSGO ? 172 : 152, ObjectValueType_Vector, origin);
+	DHookGetParamObjectPtrVarVector(hParams, 2, g_iCMoveData_Origin, ObjectValueType_Vector, origin);
 
 	float nextOrigin[3], mins[3], maxs[3];
 
