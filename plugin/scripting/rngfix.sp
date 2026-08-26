@@ -1100,7 +1100,7 @@ bool DoInclineCollisionFixes(int client, const float nrm[3])
 	}
 	else
 	{
-		SetVelocity(client, newVelocity);
+		SetVelocity(client, newVelocity, true);
 	}
 
 	return true;
