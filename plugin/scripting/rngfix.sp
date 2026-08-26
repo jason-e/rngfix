@@ -25,6 +25,16 @@ public Plugin myinfo =
 #define DUCK_MIN_DUCKSPEED 1.5  			// Minimum duckspeed to start ducking
 #define DEFAULT_JUMP_IMPULSE 301.99337741 	// sqrt(2 * 57.0 units * 800.0 u/s^2)
 
+// How many bits to use to encode an edict.
+#define    MAX_EDICT_BITS                11            // # of bits needed to represent max edicts
+// Max # of edicts in a level
+#define    MAX_EDICTS                    (1<<MAX_EDICT_BITS)
+// Used for networking ehandles.
+#define NUM_ENT_ENTRY_BITS        (MAX_EDICT_BITS + 1)
+#define NUM_ENT_ENTRIES            (1 << NUM_ENT_ENTRY_BITS)
+#define ENT_ENTRY_MASK            (NUM_ENT_ENTRIES - 1)
+#define INVALID_EHANDLE_INDEX    0xFFFFFFFF
+
 float g_vecMins[3];
 float g_vecMaxsUnducked[3];
 float g_vecMaxsDucked[3];
@@ -85,6 +95,8 @@ Handle g_hPassesTriggerFilters;
 Handle g_hProcessMovementHookPre;
 Address g_IServerGameEnts;
 Handle g_hMarkEntitiesAsTouching;
+Handle g_hFindEntityByName;
+int g_iRefOffset;
 
 int g_iCMoveData_ForwardMove;
 int g_iCMoveData_SideMove;
@@ -179,7 +191,7 @@ public void OnPluginStart()
 	g_cvJumpImpulse		 = FindConVar("sv_jump_impulse");
 	g_cvAutoBunnyHopping = FindConVar("sv_autobunnyhopping");
 
-	Handle gamedataConf = LoadGameConfigFile("rngfix.games");
+	GameData gamedataConf = new GameData("rngfix.games");
 	if (gamedataConf == null) SetFailState("Failed to load rngfix gamedata");
 
 	// PassesTriggerFilters
@@ -272,6 +284,25 @@ public void OnPluginStart()
 
 	if (g_hMarkEntitiesAsTouching == null) SetFailState("Unable to prepare SDKCall for IServerGameEnts::MarkEntitiesAsTouching");
 
+	int m_RefEHandleOff = gamedataConf.GetOffset("m_RefEHandle");
+	int ibuff = gamedataConf.GetOffset("m_angRotation");
+	g_iRefOffset = ibuff + m_RefEHandleOff;
+
+	if (gamedataConf.GetOffset("FindEntityByName_StaticCall") == 1)
+		StartPrepSDKCall(SDKCall_Static);
+	else
+		StartPrepSDKCall(SDKCall_EntityList);
+	if(!PrepSDKCall_SetFromConf(gamedataConf, SDKConf_Signature, "FindEntityByName"))
+		SetFailState("Failed to find FindEntityByName signature.");
+	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_ByValue);
+	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer, VDECODE_FLAG_ALLOWNULL | VDECODE_FLAG_ALLOWWORLD);
+	PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);
+	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer, VDECODE_FLAG_ALLOWNULL | VDECODE_FLAG_ALLOWWORLD);
+	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer, VDECODE_FLAG_ALLOWNULL | VDECODE_FLAG_ALLOWWORLD);
+	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer, VDECODE_FLAG_ALLOWNULL | VDECODE_FLAG_ALLOWWORLD);
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
+	g_hFindEntityByName = EndPrepSDKCall();
+
 	delete CreateInterface;
 	delete gamedataConf;
 
@@ -344,24 +375,34 @@ public Action Hook_TriggerStartTouch(int entity, int other)
 	return Plugin_Continue;
 }
 
-// TODO Would be nice to have IServerTools::FindEntityByName / CGlobalEntityList::FindEntityByName
-bool NameExists(const char[] targetname)
+//Credits to gammacase for this workaround.
+int EntityToBCompatRef(Address player)
 {
-	// Assume special types exist
-	if (targetname[0] == '!') return true;
+	if(player == Address_Null)
+		return INVALID_EHANDLE_INDEX;
 
-	char targetname2[128];
+	int m_RefEHandle = LoadFromAddress(player + view_as<Address>(g_iRefOffset), NumberType_Int32);
 
-	int max = GetMaxEntities();
-	for (int entity = 1; entity < max; entity++)
-	{
-		if (!IsValidEntity(entity)) continue;
-		if (GetEntPropString(entity, Prop_Data, "m_iName", targetname2, sizeof(targetname2)) == 0) continue;
+	if(m_RefEHandle == INVALID_EHANDLE_INDEX)
+		return INVALID_EHANDLE_INDEX;
 
-		if (StrEqual(targetname, targetname2)) return true;
-	}
+	// https://github.com/perilouswithadollarsign/cstrike15_src/blob/29e4c1fda9698d5cebcdaf1a0de4b829fa149bf8/public/basehandle.h#L137
+	int entry_idx = m_RefEHandle & ENT_ENTRY_MASK;
 
-	return false;
+	if(entry_idx >= MAX_EDICTS)
+		return m_RefEHandle | (1 << 31);
+
+	return entry_idx;
+}
+
+int FindEntityByName(int startEntity, const char[] targetname, int searchingEnt, int activator, int caller)
+{
+	Address targetEntityAddr = SDKCall(g_hFindEntityByName, startEntity, targetname, searchingEnt, activator, caller, 0);
+
+	if(targetEntityAddr == Address_Null)
+		return -1;
+
+	return EntRefToEntIndex(EntityToBCompatRef(targetEntityAddr));
 }
 
 public void Hook_TriggerTeleportTouchPost(int entity, int other)
@@ -373,7 +414,7 @@ public void Hook_TriggerTeleportTouchPost(int entity, int other)
 	char targetstring[128];
 	if (GetEntPropString(entity, Prop_Data, "m_target", targetstring, sizeof(targetstring)) == 0) return;
 
-	if (!NameExists(targetstring)) return;
+	if (-1 == FindEntityByName(-1, targetstring, -1, other, other)) return;
 
 	if (g_iLastMapTeleportTick[other] == g_iTick[other]-1)
 	{

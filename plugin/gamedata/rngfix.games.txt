@@ -26,6 +26,12 @@
 				"windows"		"1"
 				"linux"			"2"
 			}
+
+			"m_angRotation"
+			{
+				"class"		"CBaseEntity"
+				"prop"		"m_angRotation"
+			}
 		}
 	}
 
@@ -81,6 +87,27 @@
 			{
 				"windows"   "172"
 				"linux"     "172"
+			}
+
+			"FindEntityByName_StaticCall"
+			{
+				"windows" "1"
+			}
+
+			"m_RefEHandle"
+			{
+				"windows"   "12"
+				"linux"     "12"
+			}
+		}
+
+		"Signatures"
+		{
+			// Search "NULL entity in global entity list!" and look for the function that compares to the char '!' at the top.
+			"FindEntityByName"
+			{
+				"windows"	"\x55\x8B\xEC\x53\x8B\x5D\x0C\x85\xDB\x74\x2A"
+				"linux"		"\x55\x89\xE5\x57\x56\x53\x83\xEC\x1C\x8B\x55\x2A\x8B\x5D\x2A\x8B\x7D"
 			}
 		}
 	}
@@ -153,6 +180,26 @@
 				"windows64" "2"
 				"linux"		"3"
 				"linux64"   "3"
+			}
+
+			"m_RefEHandle"
+			{
+				"windows"   "12"
+				"windows64" "12"
+				"linux"     "12"
+				"linux64"   "12"
+			}
+		}
+
+		"Signatures"
+		{
+			// search for "Can't find landmark %s" to find CChangeLevel::FindLandmark and the first function call inside is the `FindEntityByName` we're looking for...
+			"FindEntityByName"
+			{
+				"windows"	"\x55\x8B\xEC\x53\x8B\x5D\x2A\x56\x8B\xF1\x57\x85\xDB\x0F\x84"
+				"windows64" "\x48\x89\x5C\x24\x2A\x48\x89\x74\x24\x2A\x48\x89\x7C\x24\x2A\x41\x56\x48\x83\xEC\x30\x4D\x8B\xD1"
+				"linux"		"@_ZN17CGlobalEntityList16FindEntityByNameEP11CBaseEntityPKcS1_S1_S1_P17IEntityFindFilter"
+				"linux64"   "@_ZN17CGlobalEntityList16FindEntityByNameEP11CBaseEntityPKcS1_S1_S1_P17IEntityFindFilter"
 			}
 		}
 	}
